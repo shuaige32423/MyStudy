@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset = "utf-8">
+        <title>我的第一个html</title>
+        <style>
+            #outer-box {
+                border: 1px solid black;
+                width: 300px;
+                margin: 0 auto;
+                background-color: lightblue;
+            }
+            #inner-box {
+                border: 1px solid rgb(209, 174, 91);
+                width: 100px;
+                margin: 0 auto;
+                background-color: burlywood;
+                border-radius: 2px;
+                border-radius: 50%;
+            }
+            #msg {
+                text-align: center;
+            }   
+        </style>
+    </head>
+    <body>
+        <h1 style="text-align: center;">这是我的h1标签</h1>
+        <div id = "outer-box">
+            <p>这是我的div盒子里的一个段落需要居中</p>
+            <div id ='inner-box'>
+                <p id="msg">这是盒子里面的盒子，点击按钮更改文字</p>
+                <button id="btn1" onclick="changeText()">按钮</button>
+            </div>
+        </div>
+        <script>
+            function changeText(){
+                document.getElementById('msg').textContent = "文本已更改";
+            }
+
+        </script>
+    </body>
+</html>
