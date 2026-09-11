@@ -1,2 +1,9 @@
-rb.txt
-Test.class
+#vscode样式
+.vscode
+
+#项目依赖
+node_modules
+
+#build打包文件
+dist
+
