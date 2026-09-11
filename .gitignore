@@ -1,9 +1,19 @@
-#vscode样式
-.vscode
+# dependencies
+node_modules/
 
-#项目依赖
-node_modules
+# next.js
+.next/
+out/
 
-#build打包文件
-dist
+# production
+build/
+dist/
 
+# editor
+.vscode/*
+!.vscode/extensions.json
+
+# misc
+.DS_Store
+*.log
+.env*
