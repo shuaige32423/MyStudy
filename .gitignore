@@ -29,3 +29,6 @@ oldbackend/
 
 # 部署脚本 + 服务器凭据，只留在本地
 .deploy/
+
+#数据库
+backend/*.db

@@ -13,15 +13,16 @@
 线上跑：systemd 托管，只监听 127.0.0.1:8000，由 nginx 把 /api 反代进来。
 """
 
-from fastapi import FastAPI
+import uuid
+from fastapi import Request, Response, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pypinyin import Style, lazy_pinyin
 from snownlp import SnowNLP
-import json
 from datetime import datetime, timezone
+from storage import init_db, save_record, get_history
 
-
+init_db()
 app = FastAPI(title="zero to tech API", version="0.2.0")
 
 # 本地联调时前端在 3000、后端在 8000，属于"跨域"，浏览器会先发预检请求。
@@ -36,6 +37,7 @@ app.add_middleware(
     ],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 
@@ -43,6 +45,18 @@ app.add_middleware(
 # 首页要显示的内容。还是写死的常量。
 # 形状和前端 data/site.js 里的 home 完全一致。
 # ---------------------------------------------------------------------------
+def get_session_id(request: Request, response: Response) -> str:
+    sid = request.cookies.get("session_id")      # 先看有没有纸条
+    if not sid:                                  # 第一次来，没有——发一张
+        sid = uuid.uuid4().hex                    # 一串随机、不重复的 id
+        response.set_cookie(
+            "session_id", sid,
+            httponly=True, samesite="lax",
+            max_age=60 * 60 * 24 * 30,            # 记 30 天
+        )
+    return sid   
+
+
 PROFILE = {
     "heroTitle": "关于我",
     "heroSubtitle": "项目，创意，灵感，心得，我的作品",
@@ -57,21 +71,6 @@ PROFILE = {
         "learning": "零到全栈",
     },
 }
-
-HISTORY_FILE = "history.json"
-
-def load_history():
-    try:
-        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-def save_record(record):
-    records = load_history()
-    records.append(record)
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(records, f, ensure_ascii=False, indent=2)
 
 
 
@@ -107,7 +106,7 @@ def analyze_sentiment(text: str) -> tuple[float, str]:
     if not text.strip():
         return 0.5, "中性"
 
-    score = SnowNLP(text).sentiments   # .sentiments 才是 float，对象本身不是
+    score = round(SnowNLP(text).sentiments, 2)  # .sentiments 才是 float，对象本身不是
 
     if score > 0.66:
         label = "正面"
@@ -117,7 +116,6 @@ def analyze_sentiment(text: str) -> tuple[float, str]:
         label = "中性"
 
     return score, label
-
 
 # ---------------------------------------------------------------------------
 # 路由
@@ -133,24 +131,23 @@ def health():
 def get_profile():
     return PROFILE
 
-@app.get("/api/history")
-def history():
-    records = load_history()
-    records.reverse()          # 倒过来：新的排前面
-    return records[:3]        # 切一刀：只留最近 3 条
-
 
 @app.post("/api/analyze")
-def analyze(req: AnalyzeRequest):
+def analyze(req: AnalyzeRequest, request: Request, response: Response):
+    sid = get_session_id(request, response)
     text = req.text
-    score = analyze_sentiment(text)[0]
-    label = analyze_sentiment(text)[1]
+    score , label = analyze_sentiment(text)
     result = {
         "text": text,
         "score": score,
         "label": label,
         "pinyin": " ".join(lazy_pinyin(text, style=Style.TONE)),
-        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),  # ← 新增
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    save_record(result)                                                          # ← 存档到文件
-    return result
+    save_record(sid, result)          # 存的时候盖上这个会话的记号
+    return result                     # ← 返回体一个字没变，session_id 只走 cookie
+
+@app.get("/api/history")
+def history(request: Request, response: Response, limit: int = 5):
+    sid = get_session_id(request, response)
+    return get_history(sid, limit)    # 只回这个会话自己的
