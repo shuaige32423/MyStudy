@@ -17,3 +17,15 @@ dist/
 .DS_Store
 *.log
 .env*
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 旧后端：保留在本地做参考，不进仓库
+oldbackend/
+
+# 部署脚本 + 服务器凭据，只留在本地
+.deploy/

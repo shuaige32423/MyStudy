@@ -70,6 +70,19 @@
 
 .primary-button:hover { opacity: 0.86; }
 
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.lab-error {
+  margin: 0;
+  color: #d70015;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: -0.12px;
+}
+
 .result-stack {
   display: grid;
   gap: 14px;
