@@ -12,7 +12,8 @@
 
 线上跑：systemd 托管，只监听 127.0.0.1:8000，由 nginx 把 /api 反代进来。
 """
-
+import os
+from dotenv import load_dotenv
 import uuid
 from fastapi import Request, Response, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,10 @@ from snownlp import SnowNLP
 from datetime import datetime, timezone
 from storage import init_db, save_record, get_history
 
+load_dotenv()                        # ← 读同目录下的 .env
+
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+
 init_db()
 app = FastAPI(title="zero to tech API", version="0.2.0")
 
@@ -30,8 +35,7 @@ app = FastAPI(title="zero to tech API", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        ALLOWED_ORIGINS,
         "http://tanyi.fun",
         "https://tanyi.fun",
     ],
